@@ -78,6 +78,30 @@ docker compose down -v   # apagar Y borrar los datos (re-siembra al volver a sub
 
 Más dos dimensiones que se ajustan desde el front: **concurrencia** y **nº de peticiones**.
 
+## Escenarios de ejemplo (cargas realistas)
+
+Valores sugeridos por operación para simular situaciones reales. Tres claves para entender los números:
+
+- **Cómputo** lleva pocas peticiones a propósito: a ~10–16 req/s en los stacks lentos, 3000 peticiones tardarían minutos por stack (× 8).
+- En las operaciones con DB, la concurrencia real está topeada por el **pool = 10**: subirla más mide cómo cada stack *encola* la presión, no más paralelismo de base.
+- **Rondas** alto donde el ruido pesa (operaciones rápidas, tiempos chicos) y bajo donde cada corrida ya es larga.
+
+| Operación | Escenario | Peticiones | Conc. | Rondas | Qué simula |
+|---|---|---|---|---|---|
+| **read** | Tráfico normal | 5.000 | 50 | 3 | App consultando el detalle de un item (el endpoint más caliente) |
+| | Hora pico | 20.000 | 200 | 2 | Muchos usuarios simultáneos |
+| | Spike viral | 100.000 | 500 | 1 | Trending / tormenta de cache-miss |
+| **read-heavy** | Listado de dashboard | 2.000 | 30 | 3 | Tabla/paginado grande (1000 filas por respuesta) |
+| | Exports concurrentes | 5.000 | 100 | 2 | Varios reportes a la vez; pesa la serialización + GC |
+| **write** | Formularios normales | 3.000 | 20 | 3 | Submits de usuarios |
+| | Ingesta de eventos | 10.000 | 100 | 2 | Burst de telemetría; la concurrencia alta presiona el pool = 10 |
+| **aggregate** | Refresh analítico | 1.000 | 20 | 3 | Un dashboard que recalcula (query cara, la trabaja la DB) |
+| | Muchos paneles abiertos | 3.000 | 50 | 2 | El cuello es Postgres → stacks parejos entre sí |
+| **compute** | Tarea CPU normal | 200 | 10 | 3 | Procesamiento por request (Fibonacci n=35) |
+| | Saturación de CPU | 500 | 50 | 2 | Acá se ve quién bloquea el event loop (JS single-thread) vs los multi-hilo (Go/Rust/.NET) |
+
+> **Para que se note la diferencia entre stacks:** en `read`, subí la concurrencia (200–500) — es donde Go/Rust se despegan. En `compute`, subí la concurrencia (50) con pocas peticiones — expone el event loop de JS frente a los multi-hilo.
+
 ## Puertos
 
 | Servicio | Puerto | | Stack | Puerto |
