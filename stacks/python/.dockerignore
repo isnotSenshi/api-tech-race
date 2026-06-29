@@ -1,0 +1,14 @@
+# No copiar artefactos locales a la imagen: hacen el build mÃ¡s pesado y pueden
+# pisar lo que se instala dentro del contenedor.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.git/
+.gitignore
+*.md

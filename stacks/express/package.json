@@ -1,0 +1,14 @@
+{
+  "name": "race-express",
+  "version": "1.0.0",
+  "description": "Stack de api-tech-race: JavaScript + Express. express=framework web clasico de Node (v5); pg=driver oficial de PostgreSQL.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.13.0"
+  }
+}

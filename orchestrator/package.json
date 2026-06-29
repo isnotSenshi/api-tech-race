@@ -1,0 +1,14 @@
+{
+  "name": "race-orchestrator",
+  "version": "1.0.0",
+  "description": "Motor de medicion de api-tech-race. Recibe la config del front, corre 'oha' contra un stack y devuelve metricas. fastify=API HTTP; @fastify/cors=permitir llamadas desde el front (otro origen).",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "fastify": "^5.2.0",
+    "@fastify/cors": "^10.0.0"
+  }
+}

@@ -1,0 +1,13 @@
+# No copiar artefactos de build locales a la imagen: se compila dentro.
+# target/ puede pesar cientos de MB y además mezclaría binarios del host
+# (otra plataforma) con los de la imagen.
+target
+
+# El lockfile lo dejamos que se genere en el build (no es imprescindible para
+# este benchmark). Si quisieras builds 100% deterministas, versionalo y borrá
+# esta línea.
+Cargo.lock
+
+# Ruido varios.
+.git
+.gitignore

@@ -1,0 +1,51 @@
+# Cargo.toml — manifiesto del stack Rust + Axum de api-tech-race.
+#
+# Fijamos versiones de las dependencias clave (no rangos abiertos) para que el
+# build sea reproducible: hoy y dentro de un año compila contra lo mismo. Cargo
+# igualmente elige el parche más alto compatible, pero los lockfiles los dejamos
+# que se generen en el build (no versionamos Cargo.lock acá).
+
+[package]
+name = "race-rust"
+version = "1.0.0"
+edition = "2021"
+# Forzamos un binario único y chico. No necesitamos nada más que el server.
+description = "Stack Rust + Axum de api-tech-race (mismo contrato HTTP que el resto)."
+
+[[bin]]
+name = "race-rust"
+path = "src/main.rs"
+
+[dependencies]
+# Framework web async, sobre hyper/tower. 0.7 es la línea estable actual.
+axum = "0.7"
+
+# Runtime async. "full" trae el scheduler multi-hilo, el runtime de I/O y las
+# macros (#[tokio::main]). El modelo multi-hilo es justo lo que hace que Rust
+# brille en el benchmark de concurrencia frente a runtimes single-thread.
+tokio = { version = "1", features = ["full"] }
+
+# Pool de conexiones a Postgres sobre tokio-postgres. deadpool reparte conexiones
+# del pool entre los requests concurrentes; lo fijamos en max=10 (fairness).
+deadpool-postgres = "0.14"
+
+# Driver async de Postgres. Activamos "with-chrono-0_4" para que el tipo
+# TIMESTAMPTZ se decodifique directo a chrono::DateTime<Utc> (si no, no sabría
+# mapear ese tipo de columna).
+tokio-postgres = { version = "0.7", features = ["with-chrono-0_4"] }
+
+# Fechas. La feature "serde" no la usamos para serializar created_at (lo hacemos
+# a mano para clavar el formato exacto del stack de referencia), pero chrono es
+# quien nos da DateTime<Utc> desde el driver.
+chrono = { version = "0.4", features = ["serde"] }
+
+# Serialización JSON. derive para anotar los structs de respuesta.
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Perfil de release optimizado. El benchmark corre el binario --release, así que
+# vale la pena el LTO y un solo codegen-unit aunque el build tarde un poco más.
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

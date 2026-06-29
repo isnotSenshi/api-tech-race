@@ -1,0 +1,42 @@
+# ── Dependencias / artefactos de build (se regeneran, no van al repo) ──
+# Node (Express, Nest, Fastify, orquestador, front)
+node_modules/
+dist/
+build/
+.vite/
+
+# Rust (Axum)
+target/
+
+# Go (Gin)  — binarios compilados
+bin/
+
+# Java (Spring Boot)
+*.class
+.gradle/
+target/
+
+# .NET (ASP.NET Core)
+obj/
+*.dll
+*.pdb
+
+# Python (FastAPI)
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# ── Entorno / secretos ──
+.env
+.env.local
+
+# ── Datos de Postgres (viven en un volumen Docker, nunca en el repo) ──
+# (por las dudas, si alguien monta datos localmente)
+pgdata/
+
+# ── Editores / SO ──
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

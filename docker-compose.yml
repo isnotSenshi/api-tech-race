@@ -1,0 +1,182 @@
+# docker-compose.yml — orquesta todos los servicios del proyecto.
+#
+# Por ahora (Fase 0) solo levantamos PostgreSQL. En las próximas fases
+# se irán agregando: los 8 stacks, el orquestador y el front, todos en la
+# misma red interna que crea Compose por defecto (así se ven entre sí por
+# nombre de servicio, ej. "postgres").
+#
+# Nota: las versiones modernas de Docker Compose ya NO usan la clave `version:`
+# (estaba deprecada), por eso no aparece.
+
+# ── Anchors YAML (DRY) ──────────────────────────────────────────────────────
+# Las claves que empiezan con "x-" son campos de extensión: Compose las ignora.
+# Las usamos para definir UNA vez la config común de los stacks y reusarla con
+# "*nombre", en vez de repetir las mismas 6 variables de entorno en los 8 stacks.
+x-stack-env: &stack-env
+  PGHOST: postgres            # nombre del servicio Postgres en la red interna
+  PGPORT: 5432
+  PGUSER: race
+  PGPASSWORD: race
+  PGDATABASE: race
+  # Algunos drivers (Rust, .NET) prefieren una URL completa; la ofrecemos también.
+  DATABASE_URL: postgresql://race:race@postgres:5432/race
+
+x-depends-db: &depends-db
+  postgres:
+    condition: service_healthy   # el stack no arranca hasta que la base esté lista
+
+services:
+  # ─────────────────────────────────────────────────────────────────────────
+  # PostgreSQL — base de datos COMPARTIDA por todos los stacks.
+  # Que sea una sola instancia es lo que hace justa la carrera: los 8
+  # contenders pelean contra exactamente la misma base.
+  # ─────────────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine          # alpine = imagen chica; 16 = versión estable
+    container_name: race-postgres
+    restart: unless-stopped
+
+    environment:
+      # Credenciales de desarrollo. NO son secretas: esto es una demo local.
+      POSTGRES_USER: race
+      POSTGRES_PASSWORD: race
+      POSTGRES_DB: race
+
+    ports:
+      # Exponemos 5432 al host para poder inspeccionar la base con cualquier
+      # cliente SQL (psql, DBeaver, etc.) durante el desarrollo.
+      - "5432:5432"
+
+    volumes:
+      # 1) Scripts de inicialización. La imagen oficial de Postgres ejecuta
+      #    automáticamente, EN ORDEN ALFABÉTICO, todo *.sql que encuentre en
+      #    /docker-entrypoint-initdb.d  — pero SOLO la primera vez (cuando el
+      #    directorio de datos está vacío). Así se crea el esquema y se siembra
+      #    el millón de filas sin intervención manual.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+      # 2) Volumen persistente para los datos. Sobrevive a `docker compose up/down`.
+      #    Para RE-sembrar desde cero hay que borrarlo: `docker compose down -v`.
+      - race-pgdata:/var/lib/postgresql/data
+
+    healthcheck:
+      # Otros servicios (los stacks) esperarán a que la base esté "healthy"
+      # antes de arrancar, vía `depends_on: condition: service_healthy`.
+      test: ["CMD-SHELL", "pg_isready -U race -d race"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # STACK DE REFERENCIA: JavaScript + Fastify.
+  # Es el primero de los 8 contenders y define el contrato que copian los demás.
+  # Mapa de puertos del proyecto (host -> contenedor, todos escuchan en :3000):
+  #   express 3001 · nest 3002 · fastify 3003 · go 3004 · rust 3005 ·
+  #   python 3006 · java 3007 · dotnet 3008
+  # ─────────────────────────────────────────────────────────────────────────
+  fastify:
+    build: ./stacks/fastify        # construye la imagen desde el Dockerfile de esa carpeta
+    container_name: race-fastify
+    restart: unless-stopped
+    environment:
+      # El host es "postgres": el nombre del servicio en la red interna de Compose.
+      PGHOST: postgres
+      PGPORT: 5432
+      PGUSER: race
+      PGPASSWORD: race
+      PGDATABASE: race
+    ports:
+      - "3003:3000"                # accesible desde el host en http://localhost:3003
+    depends_on:
+      postgres:
+        condition: service_healthy  # no arranca hasta que Postgres esté listo
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # LOS OTROS 7 CONTENDERS. Todos implementan el mismo contrato congelado.
+  # Cada uno usa el env común (*stack-env) y espera a Postgres (*depends-db).
+  # ─────────────────────────────────────────────────────────────────────────
+  express:                          # JavaScript + Express
+    build: ./stacks/express
+    container_name: race-express
+    restart: unless-stopped
+    environment: *stack-env
+    ports: ["3001:3000"]
+    depends_on: *depends-db
+
+  nest:                             # JavaScript/TypeScript + NestJS
+    build: ./stacks/nest
+    container_name: race-nest
+    restart: unless-stopped
+    environment: *stack-env
+    ports: ["3002:3000"]
+    depends_on: *depends-db
+
+  go:                               # Go + Gin
+    build: ./stacks/go
+    container_name: race-go
+    restart: unless-stopped
+    environment: *stack-env
+    ports: ["3004:3000"]
+    depends_on: *depends-db
+
+  rust:                             # Rust + Axum
+    build: ./stacks/rust
+    container_name: race-rust
+    restart: unless-stopped
+    environment: *stack-env
+    ports: ["3005:3000"]
+    depends_on: *depends-db
+
+  python:                           # Python + FastAPI
+    build: ./stacks/python
+    container_name: race-python
+    restart: unless-stopped
+    environment: *stack-env
+    ports: ["3006:3000"]
+    depends_on: *depends-db
+
+  java:                             # Java + Spring Boot
+    build: ./stacks/java
+    container_name: race-java
+    restart: unless-stopped
+    environment: *stack-env
+    ports: ["3007:3000"]
+    depends_on: *depends-db
+
+  dotnet:                           # .NET + ASP.NET Core
+    build: ./stacks/dotnet
+    container_name: race-dotnet
+    restart: unless-stopped
+    environment: *stack-env
+    ports: ["3008:3000"]
+    depends_on: *depends-db
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # ORQUESTADOR: el árbitro de la carrera. Corre `oha` contra los stacks y
+  # devuelve métricas. No necesita depends_on: maneja los stacks caídos por su
+  # cuenta (pinga /health y reporta disponibilidad).
+  # ─────────────────────────────────────────────────────────────────────────
+  orchestrator:
+    build: ./orchestrator
+    container_name: race-orchestrator
+    restart: unless-stopped
+    environment:
+      # Threadpool de libuv para los lookups DNS de /stacks (8 stacks en paralelo).
+      # Con el default (4), los stacks aún no construidos cuelgan el DNS y tapan
+      # al resto. Con 16, cada uno tiene su hilo.
+      UV_THREADPOOL_SIZE: 16
+    ports:
+      - "4000:4000"                # API del orquestador en http://localhost:4000
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # FRONT: página estática (nginx) para lanzar runs y ver métricas/gráficos.
+  # Llama al orquestador en http://localhost:4000 desde el navegador.
+  # ─────────────────────────────────────────────────────────────────────────
+  front:
+    build: ./front
+    container_name: race-front
+    restart: unless-stopped
+    ports:
+      - "8080:80"                  # abrir en http://localhost:8080
+
+volumes:
+  race-pgdata:    # volumen nombrado, gestionado por Docker

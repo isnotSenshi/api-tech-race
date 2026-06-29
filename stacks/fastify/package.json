@@ -1,0 +1,14 @@
+{
+  "name": "race-fastify",
+  "version": "1.0.0",
+  "description": "Stack de referencia de api-tech-race: JavaScript + Fastify. fastify=framework web (v5, el mas rapido de los 3 de JS); pg=driver oficial de PostgreSQL.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "fastify": "^5.2.0",
+    "pg": "^8.13.0"
+  }
+}

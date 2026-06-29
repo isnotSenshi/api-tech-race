@@ -1,0 +1,16 @@
+# No copiar artefactos de build locales a la imagen: se generan DENTRO del
+# contenedor (en la etapa "build" del Dockerfile multi-stage). Copiarlos solo
+# ensucia el contexto y puede pisar binarios compilados para otra plataforma.
+target/
+.gradle/
+build/
+
+# Metadatos de editores / IDE (no aportan al build).
+.idea/
+.vscode/
+*.iml
+
+# Por si alguien dejó configuración del wrapper de Maven local.
+.mvn/
+mvnw
+mvnw.cmd

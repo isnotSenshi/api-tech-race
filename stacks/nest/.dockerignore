@@ -1,0 +1,6 @@
+# No copiar dependencias ni artefactos locales a la imagen: se instalan/compilan
+# dentro del contenedor. Evita pisar binarios de Alpine con los del host y aligera
+# el contexto de build (menos archivos que mandar al daemon de Docker).
+node_modules
+dist
+npm-debug.log

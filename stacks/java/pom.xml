@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  pom.xml — manifiesto de build (Maven) del stack Java + Spring Boot.
+
+  POR QUÉ Maven y no Gradle: el parent de Spring Boot (spring-boot-starter-parent)
+  resuelve por nosotros TODAS las versiones de las dependencias del ecosistema
+  Spring (BOM = Bill of Materials). Así solo fijamos la versión de Spring Boot
+  y el resto (Tomcat, Jackson, HikariCP, driver, etc.) queda alineado y testeado
+  en conjunto. Menos sorpresas de incompatibilidad y build reproducible.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      Parent oficial de Spring Boot. Aporta el BOM (versiones coordinadas de todas
+      las libs) y la config del plugin que arma el "fat jar" ejecutable.
+      Fijamos la 3.3.x para tener un build reproducible (no usamos rangos).
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.3.5</version>
+        <relativePath/> <!-- se baja del repositorio, no es un módulo local -->
+    </parent>
+
+    <groupId>com.race</groupId>
+    <artifactId>race-java</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>race-java</name>
+    <description>Stack Java + Spring Boot de api-tech-race</description>
+
+    <properties>
+        <!-- Java 21 (LTS). El compilador y el runtime usan esta versión. -->
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!--
+          starter-web: trae Spring MVC + Tomcat embebido + Jackson (JSON).
+          Es lo que nos da el @RestController y el servidor HTTP en :3000.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--
+          starter-jdbc: trae JdbcTemplate + HikariCP (el pool de conexiones por
+          defecto de Spring Boot). Usamos JDBC "pelado" (no JPA/Hibernate) para
+          que sea comparable con los otros stacks y sin overhead de ORM.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jdbc</artifactId>
+        </dependency>
+
+        <!--
+          Driver JDBC oficial de PostgreSQL. runtime: no se necesita para compilar
+          (programamos contra la API estándar de JDBC), solo para ejecutar.
+          La versión la fija el BOM del parent de Spring Boot.
+        -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+              Plugin de Spring Boot: empaqueta un "fat jar" ejecutable
+              (con todas las dependencias dentro) que se corre con `java -jar`.
+              La versión la hereda del parent.
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

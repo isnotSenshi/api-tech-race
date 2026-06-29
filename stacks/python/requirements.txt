@@ -1,0 +1,14 @@
+# Dependencias del stack Python + FastAPI. Versiones FIJADAS para que el build
+# sea reproducible (hoy y dentro de un aÃ±o baja exactamente lo mismo).
+#
+# fastapi            -> framework web ASGI async sobre el que montamos los endpoints.
+# uvicorn[standard]  -> servidor ASGI. El extra [standard] trae uvloop + httptools
+#                       (event loop y parser HTTP en C): clave para el rendimiento.
+# asyncpg            -> driver async nativo de Postgres, el mÃ¡s rÃ¡pido del ecosistema.
+# orjson             -> serializador JSON en Rust, mucho mÃ¡s veloz que el json de la
+#                       stdlib y serializa datetime a ISO-8601 solo (usado por
+#                       ORJSONResponse). Importa sobre todo en /read-heavy.
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+asyncpg==0.30.0
+orjson==3.10.12

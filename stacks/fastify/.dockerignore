@@ -1,0 +1,4 @@
+# No copiar dependencias locales a la imagen: se instalan dentro con npm install.
+# (Evita pisar los binarios de Alpine con los del host y hace el build más liviano).
+node_modules
+npm-debug.log

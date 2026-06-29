@@ -1,0 +1,10 @@
+# No copiar artefactos de build locales a la imagen: se compilan dentro del
+# contenedor. Esto hace el build más liviano y evita pisar binarios del host.
+bin/
+obj/
+
+# Tampoco metadatos de IDE/VCS.
+.vs/
+.git/
+.gitignore
+*.user

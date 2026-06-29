@@ -1,0 +1,16 @@
+# No copiar artefactos locales a la imagen: el binario se compila DENTRO del
+# build (etapa builder). Mantener el contexto de build chico = builds más rápidos.
+
+# Binarios compilados localmente.
+server
+*.exe
+
+# Caché y artefactos de test de Go.
+*.test
+*.out
+
+# Metadatos de editores / control de versiones.
+.git
+.gitignore
+.vscode
+.idea
